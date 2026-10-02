@@ -1,0 +1,49 @@
+# Environment & Secrets
+.env
+.env.*
+*.env
+!.env.example
+*.pem
+*.key
+
+# Node / npm
+node_modules/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Build outputs (client - Vite)
+/client/dist/
+
+# Logs
+*.log
+logs/
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Docker config files (including copies created after git init)
+.docker-compose.yml
+.Dockerfile
+docker-compose.yml
+**/Dockerfile
+
+# Project sub-READMEs (root README.md stays tracked)
+/server/README.md
+/client/README.md
+/backend/README.md

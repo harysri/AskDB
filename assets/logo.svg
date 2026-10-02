@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 70" width="260" height="80">
+  <!-- Icon Badge Container -->
+  <rect x="0" y="0" width="70" height="70" rx="18" fill="#C2C6FF" />
+
+  <!-- Larger Database Icon (Scaled) -->
+  <g fill="none" stroke="#131318" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" transform="translate(5, 5)">
+    <!-- Top Cylinder Ring -->
+    <ellipse cx="30" cy="21" rx="15" ry="6" />
+    <!-- Middle Cylinder Tier -->
+    <path d="M 15 21 v 10 c 0 3.2 6.7 6 15 6 s 15 -2.8 15 -6 v -10" />
+    <!-- Bottom Cylinder Tier -->
+    <path d="M 15 31 v 10 c 0 3.2 6.7 6 15 6 s 15 -2.8 15 -6 v -10" />
+  </g>
+
+  <!-- Text (font-size 48) -->
+  <text
+    x="90"
+    y="50"
+    font-family="Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+    font-size="48"
+    font-weight="800"
+    letter-spacing="-2"
+    fill="#E1E3F5"
+  >AskDB</text>
+</svg>
