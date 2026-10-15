@@ -554,7 +554,7 @@ const Home = () => {
               <div className="flex gap-4">
                 {/* GitHub */}
                 <a
-                  href="#"
+                  href="https://github.com/harysri/AskDB"
                   className="w-10 h-10 rounded-full glass-card border-white/10 flex items-center justify-center hover:bg-primary hover:text-background hover:-translate-y-1 transition-all cursor-pointer"
                   aria-label="GitHub"
                 >
@@ -573,28 +573,13 @@ const Home = () => {
 
                 {/* Documentation */}
                 <a
-                  href="#"
+                  href="https://github.com/harysri/AskDB"
                   className="w-10 h-10 rounded-full glass-card border-white/10 flex items-center justify-center hover:bg-primary hover:text-background hover:-translate-y-1 transition-all cursor-pointer"
                   aria-label="Documentation"
                 >
                   <span className="material-symbols-outlined text-sm">
                     description
                   </span>
-                </a>
-
-                {/* Twitter/X */}
-                <a
-                  href="#"
-                  className="w-10 h-10 rounded-full glass-card border-white/10 flex items-center justify-center hover:bg-primary hover:text-background hover:-translate-y-1 transition-all cursor-pointer"
-                  aria-label="Twitter"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                  </svg>
                 </a>
               </div>
             </div>
@@ -634,7 +619,7 @@ const Home = () => {
                 <ul className="space-y-4 text-on-surface-variant text-sm font-medium">
                   <li>
                     <a
-                      href="#"
+                      href="https://github.com/harysri/AskDB"
                       className="hover:text-primary transition-colors duration-300"
                     >
                       Documentation
@@ -642,15 +627,7 @@ const Home = () => {
                   </li>
                   <li>
                     <a
-                      href="#"
-                      className="hover:text-primary transition-colors duration-300"
-                    >
-                      API Reference
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
+                      href="https://github.com/harysri/AskDB"
                       className="hover:text-primary transition-colors duration-300"
                     >
                       GitHub
