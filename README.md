@@ -147,16 +147,22 @@ The platform is built as a three-tier monorepo:
 
 ```mermaid
 flowchart LR
-    U[User Browser] -->|HTTP / JWT| G[Express Gateway :8080]
-    G -->|users, rate limits| A[(MongoDB Atlas)]
-    G -->|x-gateway-secret| C[FastAPI Core :8000]
-    C -->|sessions, schema cache| B[(MongoDB Atlas)]
-    C -->|read-only SQL| D[(Customer PostgreSQL / MySQL)]
-    C -->|Groq Qwen 3.6-27B| E[Main Analyst]
-    C -->|Google AI Studio Gemini 2.5 Flash| I[Insight Synthesizer]
-```
+    U["User Browser"]
+    G["Express Gateway<br/>:8080"]
+    C["FastAPI Core<br/>:8000"]
+    M[("MongoDB Atlas<br/>users, rate limits,<br/>sessions, schema cache")]
+    D[("Customer DB<br/>PostgreSQL / MySQL")]
+    E["Main Analyst<br/>Groq Qwen 3.6-27B"]
+    I["Insight Synthesizer<br/>Gemini 2.5 Flash"]
 
----
+    U -->|"HTTP / JWT"| G
+    G -->|"users, rate limits"| M
+    G -->|"x-gateway-secret"| C
+    C -->|"sessions, schema cache"| M
+    C -->|"read-only SQL"| D
+    C --> E
+    C --> I
+```
 
 ## Screenshots
 

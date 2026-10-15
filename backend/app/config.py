@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     # The Express gateway forwards x-user-id / x-user-email / x-user-role headers.
     # This shared secret (sent as x-gateway-secret) ensures those headers can only
     # be trusted when the request actually came through the gateway.
-    trusted_gateway_header_secret: str = "change_this_shared_secret"
+    trusted_gateway_header_secret: str = ""
 
     # --- MongoDB Atlas ---
     mongodb_uri: str
@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     default_db_password: str = ""
 
     # --- Credential encryption ---
-    credentials_encryption_key: str = "4wUju06WhahwpIQNWeytAvbdEnXc-gIVoYCPdmTkyo8="
+    credentials_encryption_key: str = ""
 
 
 @lru_cache
