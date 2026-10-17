@@ -64,11 +64,22 @@ async function start() {
     await mongoose.connect(env.mongodbUri);
     logger.info("Connected to MongoDB Atlas");
 
-    app.listen(env.port, () => {
+    const server = app.listen(env.port, () => {
       logger.info(
         `AskDB Gateway listening on port ${env.port} (${env.nodeEnv})`,
       );
       logger.info(`Proxying core requests to ${env.fastapiTargetUrl}`);
+    });
+    // A second copy looks like a crash; tell the user what is really wrong.
+    server.on("error", (err) => {
+      if (err && err.code === "EADDRINUSE") {
+        logger.error(
+          `Port ${env.port} is already in use — another gateway instance is already running. ` +
+            `Stop it first (e.g. kill <pid>) or just reuse the running one; do not start a second copy.`,
+        );
+        process.exit(1);
+      }
+      throw err;
     });
   } catch (err) {
     logger.error("Failed to start gateway", { error: err.message });

@@ -654,7 +654,7 @@ const Login = () => {
                   whileTap={{ scale: 0.95 }}
                 >
                   <Link
-                    to="#"
+                    to="/forgot-password"
                     className="text-body-sm text-primary hover:text-on-primary-container transition-colors font-medium"
                   >
                     Forgot password?

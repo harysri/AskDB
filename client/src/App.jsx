@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import Chat from "./pages/Chat";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
 
@@ -29,6 +30,10 @@ function App() {
         <Route
           path="/signup"
           element={isAuthenticated ? <Navigate to="/chat" replace /> : <Signup />}
+        />
+        <Route
+          path="/forgot-password"
+          element={isAuthenticated ? <Navigate to="/chat" replace /> : <ForgotPassword />}
         />
       </Routes>
     </div>
