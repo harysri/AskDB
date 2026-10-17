@@ -108,6 +108,7 @@ module.exports = {
         "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "spin-slow": "spin 20s linear infinite",
         "rotate": "rotate 20s linear infinite",
+        "listen-bar": "listenBar 1s ease-in-out infinite",
       },
       keyframes: {
         fadeInUp: {
@@ -121,6 +122,10 @@ module.exports = {
         rotate: {
           from: { transform: "rotate(0deg)" },
           to: { transform: "rotate(360deg)" },
+        },
+        listenBar: {
+          "0%, 100%": { transform: "scaleY(0.35)" },
+          "50%": { transform: "scaleY(1)" },
         },
       },
     },

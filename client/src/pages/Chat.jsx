@@ -14,6 +14,7 @@ import { sendMessage } from "../api/chat";
 import { useAuth } from "../context/AuthContext";
 import { getFirstName } from "../utils/user";
 import { mapMessage, mapSession } from "../utils/messages";
+import useSpeechRecognition from "../hooks/useSpeechRecognition";
 
 const SUGGESTION_CHIPS = [
   "Show me total revenue by region",
@@ -61,6 +62,39 @@ const Chat = () => {
   const textareaRef = useRef(null);
   const messagesEndRef = useRef(null);
   const suggestionScrollRef = useRef(null);
+
+  // Speech-to-text (Web Speech API). Finalized text is appended to the
+  // textarea live; on stop the dictated text stays for review — never auto-sends.
+  const speech = useSpeechRecognition();
+  const dictatedText = speech.transcript + speech.interim;
+
+  useEffect(() => {
+    if (speech.isListening && dictatedText) {
+      setInputValue(dictatedText);
+    }
+  }, [dictatedText, speech.isListening]);
+
+  useEffect(() => {
+    if (speech.error) {
+      setChatError(speech.error);
+    }
+  }, [speech.error]);
+
+  const toggleDictation = () => {
+    if (!speech.supported) {
+      setChatError(
+        "Voice input isn't supported in this browser. Please use Chrome or Edge.",
+      );
+      return;
+    }
+    if (speech.isListening) {
+      speech.stop(); // dictated text stays in the textarea for review
+    } else {
+      setInputValue("");
+      speech.reset();
+      speech.start();
+    }
+  };
 
   const refreshSessions = async () => {
     try {
@@ -190,6 +224,9 @@ const Chat = () => {
 
   const handleSendMessage = async (text = inputValue) => {
     if (!text.trim() || isLoading) return;
+
+    // Leaving dictation running would keep overwriting the (now empty) input.
+    speech.stop();
 
     if (!isConnected) {
       setShowConnectModal(true);
@@ -368,8 +405,38 @@ const Chat = () => {
 
         {/* Fixed Bottom Input */}
         <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8 bg-gradient-to-t from-background via-background/90 to-transparent pointer-events-none flex justify-center">
-          <div className="max-w-[1000px] mx-auto pointer-events-auto w-full">
-            {/* Request error banner */}
+            <div className="max-w-[1000px] mx-auto pointer-events-auto w-full">
+              {/* Listening indicator with equalizer animation */}
+              {speech.isListening && (
+                <div className="animate-fade-in-up flex items-center gap-3 px-4 py-2.5 mb-3 mx-auto w-fit rounded-full bg-surface-container-highest/90 backdrop-blur-xl border border-primary/30 shadow-lg shadow-primary/10">
+                  <div className="flex items-end gap-[3px] h-5">
+                    {[0.35, 0.62, 0.48, 0.78, 0.55].map((h, i) => (
+                      <span
+                        key={i}
+                        className={`w-1 rounded-full ${i % 2 ? "bg-tertiary" : "bg-primary"} animate-listen-bar`}
+                        style={{
+                          height: `${h * 100}%`,
+                          animationDelay: `${i * 120}ms`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-label-caps text-primary uppercase tracking-[0.15em]">
+                    Listening
+                  </span>
+                  <button
+                    type="button"
+                    onClick={toggleDictation}
+                    className="text-on-surface-variant hover:text-error transition-colors"
+                    title="Stop dictation"
+                  >
+                    <span className="material-symbols-outlined text-base">
+                      stop_circle
+                    </span>
+                  </button>
+                </div>
+              )}
+              {/* Request error banner */}
             {chatError && (
               <div className="flex items-center gap-2 p-3 mb-3 rounded-xl bg-error/10 border border-error/30">
                 <span className="material-symbols-outlined text-error text-lg">
@@ -414,18 +481,52 @@ const Chat = () => {
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder={
-                    isConnected
-                      ? "Type your data question here..."
-                      : "Connect a database to start querying..."
+                    speech.isListening
+                      ? "Listening… speak your question now"
+                      : isConnected
+                        ? "Type your data question here..."
+                        : "Connect a database to start querying..."
                   }
                   rows={1}
                   className="flex-1 bg-transparent border-none focus:ring-0 py-4 text-lg md:text-xl text-on-surface placeholder-on-surface-variant/40 resize-none min-h-[56px] max-h-[220px] outline-none"
                   disabled={!isConnected && messages.length > 0}
                 />
                 <div className="flex items-center gap-2 mb-2 pr-2">
-                  <button className="p-3 text-on-surface-variant hover:text-primary transition-colors rounded-xl hover:bg-white/5">
-                    <span className="material-symbols-outlined">mic</span>
-                  </button>
+                  {/* Voice input toggle (Web Speech API) */}
+                  <div className="relative">
+                    {speech.isListening && (
+                      <span className="absolute inset-0 rounded-xl bg-primary/50 animate-ping" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={toggleDictation}
+                      disabled={!speech.supported}
+                      title={
+                        speech.supported
+                          ? speech.isListening
+                            ? "Stop dictation"
+                            : "Dictate your question"
+                          : "Voice input requires Chrome or Edge"
+                      }
+                      aria-pressed={speech.isListening}
+                      className={`relative p-3 rounded-xl transition-all ${
+                        speech.isListening
+                          ? "bg-primary text-on-primary shadow-lg shadow-primary/30"
+                          : "text-on-surface-variant hover:text-primary hover:bg-white/5"
+                      } ${!speech.supported ? "opacity-40 cursor-not-allowed" : ""}`}
+                    >
+                      <span
+                        className={`material-symbols-outlined ${speech.isListening ? "animate-pulse" : ""}`}
+                        style={
+                          speech.isListening
+                            ? { fontVariationSettings: '"FILL" 1' }
+                            : undefined
+                        }
+                      >
+                        mic
+                      </span>
+                    </button>
+                  </div>
                   <button
                     onClick={() => handleSendMessage()}
                     disabled={!inputValue.trim() || isLoading}
