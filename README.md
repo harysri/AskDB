@@ -70,6 +70,7 @@ The platform is built as a three-tier monorepo:
 ## Features
 
 - **🗣️ Natural Language → SQL** — LangGraph multi-agent pipeline converts questions into SQL.
+- **🎙️ Voice input in chat** — Chrome/Edge users can dictate questions directly in the chat composer using the Web Speech API; transcripts appear in the input box for quick review before sending.
 - **🤖 Two specialized agents** — a **Main Analyst** (Groq · Llama-3.3-70B) plans and revises
   queries, and an **Insight Synthesizer** (Google Gemini 2.5 Flash) turns tabular results into
   plain-language business insights.
