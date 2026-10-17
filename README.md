@@ -84,6 +84,9 @@ The platform is built as a three-tier monorepo:
   with a capped 25-row sample.
 - **🔐 Enterprise authentication** — JWT access tokens + rotating refresh tokens, bcrypt
   password hashing, and `express-validator` input validation.
+- **✉️ Email OTP password reset** — 4-step self-service flow (email → 6-digit OTP verification →
+  new password → success) with auto-focus/paste OTP boxes, a 60-second resend timer, and a
+  branded HTML email delivered via Gmail SMTP (nodemailer).
 - **🚦 Distributed rate limiting** — `rate-limit-mongo` store enforces limits consistently across
   gateway instances; stricter limits on chat and auth endpoints.
 - **🔒 Credentials encrypted at rest** — customer database passwords are stored in MongoDB
@@ -101,6 +104,7 @@ The platform is built as a three-tier monorepo:
 | API Gateway            | Express.js (Node.js ≥ 18)                                             | 4.19          |
 | Gateway middleware     | helmet · cors · morgan · cookie-parser · winston                      | —             |
 | Auth & validation      | jsonwebtoken · bcryptjs · express-validator                           | 9 / 2.4 / 7.1 |
+| Email delivery         | nodemailer (Gmail SMTP)                                              | 6.9           |
 | Rate limiting          | express-rate-limit + rate-limit-mongo                                 | 7.3 / 2.3     |
 | Core service           | FastAPI (Python 3.11) + uvicorn                                       | 0.111 / 0.30  |
 | Agent orchestration    | LangGraph                                                             | 0.1.16        |
@@ -262,6 +266,18 @@ The project is configured via `.env` files in `server/` and `backend/`.
 | `RATE_LIMIT_MAX_REQUESTS`       | No       | `60`                    | General API limit per window.                                                             |
 | `RATE_LIMIT_CHAT_MAX_REQUESTS`  | No       | `15`                    | Chat endpoint limit per window.                                                           |
 | `ALLOWED_ORIGINS`               | No       | `http://localhost:3000` | Comma-separated CORS origins. **Set to `http://localhost:5173` for the Vite dev server.** |
+| `SMTP_HOST`                     | No       | `smtp.gmail.com`        | SMTP server host for OTP emails.                                                          |
+| `SMTP_PORT`                     | No       | `465`                   | SMTP port (465 = implicit TLS).                                                            |
+| `SMTP_SECURE`                   | No       | `true`                  | Use TLS (`false` for port 587 with STARTTLS).                                             |
+| `SMTP_USER`                     | No\*     | —                       | Gmail address used to send OTP emails.                                                    |
+| `SMTP_PASS`                     | No\*     | —                       | Gmail **app password** (16 chars, no spaces). Required for OTP email delivery.            |
+| `SMTP_FROM`                     | No       | `SMTP_USER`             | From header, e.g. `"AskDB <you@gmail.com>"`.                                              |
+| `OTP_TTL_MINUTES`               | No       | `10`                    | OTP expiry window in minutes.                                                             |
+| `OTP_MAX_ATTEMPTS`              | No       | `5`                     | Wrong guesses before an OTP is invalidated.                                               |
+| `OTP_MAX_SENDS`                 | No       | `3`                     | Max OTP requests per email within the TTL window.                                         |
+
+\* If `SMTP_USER`/`SMTP_PASS` are empty, OTP emails are skipped (dev log only) — the reset flow
+still works end-to-end for testing without a mail server.
 
 ### `backend/.env` — Core Service
 
@@ -328,6 +344,8 @@ Open `http://localhost:5173` — Vite proxies API calls to the gateway on `:8080
 ## 💬 Usage
 
 1. **Register / sign in** at the home page (JWT access + refresh tokens are issued).
+   Forgot your password? Use **Forgot password?** on the login page for the 4-step email OTP
+   reset flow (email → 6-digit code → new password → success).
 2. **Connect a database** using the _Connect Database_ modal — provide PostgreSQL/MySQL
    credentials. AskDB will:
    - verify connectivity,
@@ -351,12 +369,26 @@ sessions routes require `Authorization: Bearer <accessToken>`.
 
 ### Authentication (public)
 
-| Method | Endpoint         | Description                                                   |
-| ------ | ---------------- | ------------------------------------------------------------- |
-| `POST` | `/auth/register` | Create an account (email, password ≥ 8 chars, optional name). |
-| `POST` | `/auth/login`    | Sign in → returns `{ user, accessToken, refreshToken }`.      |
-| `POST` | `/auth/refresh`  | Rotate refresh token → new access + refresh tokens.           |
-| `POST` | `/auth/logout`   | Revoke the refresh token (`204`).                             |
+| Method | Endpoint             | Description                                                                                       |
+| ------ | -------------------- | ------------------------------------------------------------------------------------------------- |
+| `POST` | `/auth/register`     | Create an account (email, password ≥ 8 chars, optional name).                                     |
+| `POST` | `/auth/login`        | Sign in → returns `{ user, accessToken, refreshToken }`.                                          |
+| `POST` | `/auth/refresh`      | Rotate refresh token → new access + refresh tokens.                                               |
+| `POST` | `/auth/logout`       | Revoke the refresh token (`204`).                                                                 |
+| `POST` | `/auth/send-otp`     | Email a 6-digit password-reset OTP (expires in 10 min, max 3 sends per window).                   |
+| `POST` | `/auth/verify-otp`   | Verify the OTP → `{ message: "OTP verified", valid: true }` (5 wrong attempts invalidate it).     |
+| `POST` | `/auth/reset-password` | Set a new password using a verified OTP; consumes the OTP and revokes all sessions.             |
+
+### Password reset flow
+
+1. **`/auth/send-otp`** — body `{ email }`. Generates a random 6-digit OTP, stores only its
+   SHA-256 hash (with pepper) in `password_reset_otps` with a 10-minute TTL, and emails it via
+   Gmail SMTP. Returns a generic success message even for unknown emails (anti-enumeration).
+2. **`/auth/verify-otp`** — body `{ email, otp }`. Checks match + expiry + attempt limit,
+   then marks the OTP as verified for the final step.
+3. **`/auth/reset-password`** — body `{ email, otp, newPassword }`. Re-verifies the OTP,
+   bcrypt-hashes the new password, invalidates the OTP (single-use), and clears the stored
+   refresh token so all existing sessions must re-login.
 
 ### Database connections
 
@@ -452,10 +484,14 @@ NLQuery_Agent/
 │       │   ├── auth.js           #   JWT verification
 │       │   ├── rateLimiter.js    #   general / chat / auth limiters (MongoDB store)
 │       │   └── errorHandler.js
-│       ├── models/User.js        #   Mongoose user model (bcrypt)
+│       ├── models/
+│       │   ├── PasswordResetOtp.js #   OTP model (sha256-hashed, TTL-indexed)
+│       │   └── User.js            #   Mongoose user model (bcrypt)
 │       ├── routes/
-│       │   ├── auth.js           #   register / login / refresh / logout
-│       │   └── proxy.js          #   /api/* → FastAPI core (+ x-gateway-secret)
+│       │   ├── auth.js            #   register / login / refresh / logout / send-otp / verify-otp / reset-password
+│       │   └── proxy.js           #   /api/* → FastAPI core (+ x-gateway-secret)
+│       ├── services/
+│       │   └── mailer.js          #   nodemailer Gmail transport + branded OTP email template
 │       └── utils/
 │           ├── logger.js         #   winston
 │           └── tokens.js         #   JWT access + refresh helpers
@@ -498,7 +534,7 @@ NLQuery_Agent/
     ├── tailwind.config.js        #   #c3c0ff primary · #4cd7f6 tertiary · #131318 background
     ├── vite.config.js            #   dev server :5173, proxies /auth + /api → :8080
     └── src/
-        ├── App.jsx               #   routes: / · /chat (protected) · /login · /signup
+        ├── App.jsx               #   routes: / · /chat (protected) · /login · /signup · /forgot-password
         ├── main.jsx
         ├── api/
         │   ├── client.js         #   fetch wrapper, single-flight token refresh
@@ -513,6 +549,7 @@ NLQuery_Agent/
         │   └── Sidebar.jsx
         ├── context/AuthContext.jsx
         ├── pages/
+        │   ├── ForgotPassword.jsx #  4-step OTP reset flow (email → OTP → password → success)
         │   ├── Home.jsx
         │   ├── Chat.jsx
         │   ├── Login.jsx
