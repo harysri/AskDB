@@ -28,7 +28,7 @@ class Settings(BaseSettings):
 
     # --- LLM Providers ---
     groq_api_key: str = ""
-    groq_model: str = "qwen/qwen3.6-27b"
+    groq_model: str = "qwen/qwen3.8-27b"
 
     google_api_key: str = ""
     gemini_model: str = "gemini-2.5-flash"
