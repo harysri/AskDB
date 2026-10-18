@@ -1,12 +1,19 @@
-import React, { useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import { getInitials } from "../utils/user";
+import React, { Suspense, lazy, useMemo, useState } from "react";
+import { analyzeTable } from "../utils/chartData";
+
+const ResultChart = lazy(() => import("./ResultChart"));
 
 const ChatMessage = ({ message }) => {
   const { role, content, sql, timestamp, type = "text" } = message;
   const isUser = role === "user";
-  const { user } = useAuth();
   const [copied, setCopied] = useState(false);
+  const [tableView, setTableView] = useState("table");
+
+  const chartAnalysis = useMemo(
+    () =>
+      type === "table" ? analyzeTable(message.headers, message.rows) : null,
+    [type, message.headers, message.rows],
+  );
 
   const handleCopySql = async () => {
     if (!sql) return;
@@ -32,7 +39,7 @@ const ChatMessage = ({ message }) => {
 
   return (
     <div
-      className={`flex gap-4 ${isUser ? "justify-end" : "justify-start"} animate-fade-in-up`}
+      className={`flex w-full gap-4 ${isUser ? "justify-end" : "justify-start"} animate-fade-in-up`}
     >
       {/* Assistant Avatar */}
       {!isUser && (
@@ -48,7 +55,7 @@ const ChatMessage = ({ message }) => {
 
       {/* Message Bubble */}
       <div
-        className={`max-w-[90%] sm:max-w-[85%] lg:max-w-[75%] ${isUser ? "order-1" : "order-2"}`}
+        className={`flex-1 min-w-0 ${isUser ? "order-1" : "order-2"}`}
       >
         <div
           className={`px-6 py-5 rounded-2xl ${
@@ -116,41 +123,95 @@ const ChatMessage = ({ message }) => {
           {type === "table" && (
             <div className="space-y-3">
               <div className="text-base md:text-lg leading-7">{content}</div>
-              <div className="mt-3 rounded-xl overflow-hidden border border-outline-variant/30">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead className="bg-surface-container-lowest border-b border-outline-variant/30">
-                      <tr>
-                        {message.headers?.map((header, i) => (
-                          <th
-                            key={i}
-                            className="px-4 py-3 text-label-mono text-primary uppercase text-[10px] tracking-wider"
-                          >
-                            {header}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-outline-variant/20">
-                      {message.rows?.map((row, i) => (
-                        <tr
-                          key={i}
-                          className="hover:bg-white/5 transition-colors"
-                        >
-                          {row.map((cell, j) => (
-                            <td
-                              key={j}
-                              className="px-4 py-3 text-sm md:text-base text-on-surface-variant"
+
+              {chartAnalysis?.chartable && (
+                <div className="inline-flex items-center rounded-lg bg-surface-container-lowest border border-outline-variant/30 p-1">
+                  <button
+                    type="button"
+                    onClick={() => setTableView("table")}
+                    aria-pressed={tableView === "table"}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-label-mono transition-colors ${
+                      tableView === "table"
+                        ? "bg-surface-container-high text-primary"
+                        : "text-on-surface-variant hover:text-on-surface"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-sm">
+                      table_chart
+                    </span>
+                    Table
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTableView("chart")}
+                    aria-pressed={tableView === "chart"}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-label-mono transition-colors ${
+                      tableView === "chart"
+                        ? "bg-surface-container-high text-primary"
+                        : "text-on-surface-variant hover:text-on-surface"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-sm">
+                      insert_chart
+                    </span>
+                    Chart
+                  </button>
+                </div>
+              )}
+
+              {tableView === "table" || !chartAnalysis?.chartable ? (
+                <div className="mt-3 rounded-xl overflow-hidden border border-outline-variant/30">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead className="bg-surface-container-lowest border-b border-outline-variant/30">
+                        <tr>
+                          {message.headers?.map((header, i) => (
+                            <th
+                              key={i}
+                              className="px-4 py-3 text-label-mono text-primary uppercase text-[10px] tracking-wider"
                             >
-                              {cell}
-                            </td>
+                              {header}
+                            </th>
                           ))}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-outline-variant/20">
+                        {message.rows?.map((row, i) => (
+                          <tr
+                            key={i}
+                            className="hover:bg-white/5 transition-colors"
+                          >
+                            {row.map((cell, j) => (
+                              <td
+                                key={j}
+                                className="px-4 py-3 text-sm md:text-base text-on-surface-variant"
+                              >
+                                {cell}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <Suspense
+                  fallback={
+                    <div className="mt-3 h-[360px] rounded-xl border border-outline-variant/30 flex items-center justify-center">
+                      <span className="text-label-mono text-on-surface-variant/60">
+                        Loading chart…
+                      </span>
+                    </div>
+                  }
+                >
+                  <ResultChart
+                    headers={message.headers}
+                    rows={message.rows}
+                    analysis={chartAnalysis}
+                  />
+                </Suspense>
+              )}
             </div>
           )}
 
@@ -204,15 +265,6 @@ const ChatMessage = ({ message }) => {
           </span>
         </div>
       </div>
-
-      {/* User Avatar */}
-      {isUser && (
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary-container/30 border border-primary/30 flex items-center justify-center order-2">
-          <span className="text-primary text-xs font-bold">
-            {getInitials(user)}
-          </span>
-        </div>
-      )}
     </div>
   );
 };

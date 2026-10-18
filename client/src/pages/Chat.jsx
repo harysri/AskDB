@@ -331,7 +331,7 @@ const Chat = () => {
       </div>
 
       {/* Main Content Area */}
-      <main className="lg:ml-[280px] flex-1 h-screen flex flex-col relative bg-background">
+      <main className="lg:ml-[360px] flex-1 h-screen flex flex-col relative bg-background">
         {/* Chat Canvas */}
         <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-32 pt-16 lg:pt-0">
           {messages.length === 0 ? (
