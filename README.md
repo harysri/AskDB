@@ -71,7 +71,7 @@ The platform is built as a three-tier monorepo:
 
 - **🗣️ Natural Language → SQL** — LangGraph multi-agent pipeline converts questions into SQL.
 - **🎙️ Voice input in chat** — Chrome/Edge users can dictate questions directly in the chat composer using the Web Speech API; transcripts appear in the input box for quick review before sending.
-- **🤖 Two specialized agents** — a **Main Analyst** (Groq · Llama-3.3-70B) plans and revises
+- **🤖 Two specialized agents** — a **Main Analyst** (Groq · qwen/qwen3.8-27b) plans and revises
   queries, and an **Insight Synthesizer** (Google Gemini 2.5 Flash) turns tabular results into
   plain-language business insights.
 - **📦 Three-part chat response** — each turn returns up to three assistant messages:
@@ -105,11 +105,11 @@ The platform is built as a three-tier monorepo:
 | API Gateway            | Express.js (Node.js ≥ 18)                                             | 4.19          |
 | Gateway middleware     | helmet · cors · morgan · cookie-parser · winston                      | —             |
 | Auth & validation      | jsonwebtoken · bcryptjs · express-validator                           | 9 / 2.4 / 7.1 |
-| Email delivery         | nodemailer (Gmail SMTP)                                              | 6.9           |
+| Email delivery         | nodemailer (Gmail SMTP)                                               | 6.9           |
 | Rate limiting          | express-rate-limit + rate-limit-mongo                                 | 7.3 / 2.3     |
 | Core service           | FastAPI (Python 3.11) + uvicorn                                       | 0.111 / 0.30  |
 | Agent orchestration    | LangGraph                                                             | 0.1.16        |
-| Analyst LLM            | Groq · Qwen 3.6-27B (via `langchain-groq`)                            | 0.1.9         |
+| Analyst LLM            | Groq · `qwen/qwen3.8-27b` (via `langchain-groq`)                      | 0.1.9         |
 | Insight LLM            | Google Gemini 2.5 Flash (via `langchain-google-genai`)                | 1.0.8         |
 | Application DB / cache | MongoDB (Mongoose 8 — gateway · Motor 3.5 / PyMongo 4.8 — core)       | —             |
 | Customer databases     | PostgreSQL (`psycopg2-binary`) · MySQL (`pymysql`) via SQLAlchemy     | 2.0.31        |
@@ -157,7 +157,7 @@ flowchart LR
     C["FastAPI Core<br/>:8000"]
     M[("MongoDB Atlas<br/>users, rate limits,<br/>sessions, schema cache")]
     D[("Customer DB<br/>PostgreSQL / MySQL")]
-    E["Main Analyst<br/>Groq Qwen 3.6-27B"]
+    E["Main Analyst<br/>Groq qwen/qwen3.8-27b"]
     I["Insight Synthesizer<br/>Gemini 2.5 Flash"]
 
     U -->|"HTTP / JWT"| G
@@ -268,7 +268,7 @@ The project is configured via `.env` files in `server/` and `backend/`.
 | `RATE_LIMIT_CHAT_MAX_REQUESTS`  | No       | `15`                    | Chat endpoint limit per window.                                                           |
 | `ALLOWED_ORIGINS`               | No       | `http://localhost:3000` | Comma-separated CORS origins. **Set to `http://localhost:5173` for the Vite dev server.** |
 | `SMTP_HOST`                     | No       | `smtp.gmail.com`        | SMTP server host for OTP emails.                                                          |
-| `SMTP_PORT`                     | No       | `465`                   | SMTP port (465 = implicit TLS).                                                            |
+| `SMTP_PORT`                     | No       | `465`                   | SMTP port (465 = implicit TLS).                                                           |
 | `SMTP_SECURE`                   | No       | `true`                  | Use TLS (`false` for port 587 with STARTTLS).                                             |
 | `SMTP_USER`                     | No\*     | —                       | Gmail address used to send OTP emails.                                                    |
 | `SMTP_PASS`                     | No\*     | —                       | Gmail **app password** (16 chars, no spaces). Required for OTP email delivery.            |
@@ -291,7 +291,7 @@ still works end-to-end for testing without a mail server.
 | `MONGODB_URI`                                                                                                             | **Yes**  | —                  | MongoDB Atlas connection string (sessions, schema cache).                 |
 | `MONGODB_DB_NAME`                                                                                                         | No       | `cluster0`         | MongoDB database name.                                                    |
 | `GROQ_API_KEY`                                                                                                            | **Yes**  | —                  | Groq API key for the Main Analyst.                                        |
-| `GROQ_MODEL`                                                                                                              | No       | `qwen/qwen3.6-27b` | Groq analyst model.                                                       |
+| `GROQ_MODEL`                                                                                                              | No       | `qwen/qwen3.8-27b` | Groq analyst model.                                                       |
 | `GOOGLE_API_KEY`                                                                                                          | **Yes**  | —                  | Google AI key for the Insight Synthesizer.                                |
 | `GEMINI_MODEL`                                                                                                            | No       | `gemini-2.5-flash` | Insight model.                                                            |
 | `MAX_AGENT_ITERATIONS`                                                                                                    | No       | `6`                | Max query revision attempts.                                              |
@@ -370,15 +370,15 @@ sessions routes require `Authorization: Bearer <accessToken>`.
 
 ### Authentication (public)
 
-| Method | Endpoint             | Description                                                                                       |
-| ------ | -------------------- | ------------------------------------------------------------------------------------------------- |
-| `POST` | `/auth/register`     | Create an account (email, password ≥ 8 chars, optional name).                                     |
-| `POST` | `/auth/login`        | Sign in → returns `{ user, accessToken, refreshToken }`.                                          |
-| `POST` | `/auth/refresh`      | Rotate refresh token → new access + refresh tokens.                                               |
-| `POST` | `/auth/logout`       | Revoke the refresh token (`204`).                                                                 |
-| `POST` | `/auth/send-otp`     | Email a 6-digit password-reset OTP (expires in 10 min, max 3 sends per window).                   |
-| `POST` | `/auth/verify-otp`   | Verify the OTP → `{ message: "OTP verified", valid: true }` (5 wrong attempts invalidate it).     |
-| `POST` | `/auth/reset-password` | Set a new password using a verified OTP; consumes the OTP and revokes all sessions.             |
+| Method | Endpoint               | Description                                                                                   |
+| ------ | ---------------------- | --------------------------------------------------------------------------------------------- |
+| `POST` | `/auth/register`       | Create an account (email, password ≥ 8 chars, optional name).                                 |
+| `POST` | `/auth/login`          | Sign in → returns `{ user, accessToken, refreshToken }`.                                      |
+| `POST` | `/auth/refresh`        | Rotate refresh token → new access + refresh tokens.                                           |
+| `POST` | `/auth/logout`         | Revoke the refresh token (`204`).                                                             |
+| `POST` | `/auth/send-otp`       | Email a 6-digit password-reset OTP (expires in 10 min, max 3 sends per window).               |
+| `POST` | `/auth/verify-otp`     | Verify the OTP → `{ message: "OTP verified", valid: true }` (5 wrong attempts invalidate it). |
+| `POST` | `/auth/reset-password` | Set a new password using a verified OTP; consumes the OTP and revokes all sessions.           |
 
 ### Password reset flow
 
@@ -505,7 +505,7 @@ NLQuery_Agent/
 │       ├── config.py             #   pydantic-settings (env → settings)
 │       ├── agents/
 │       │   ├── graph.py          #   LangGraph StateGraph (analyst → retry → insight)
-│       │   ├── analyst_agent.py  #   Groq Qwen 3.6-27B — SQL generation + revision
+│       │   ├── analyst_agent.py  #   Groq qwen/qwen3.8-27b — SQL generation + revision
 │       │   ├── insight_agent.py  #   Google AI Studio Gemini 2.5 Flash — insight + recommendations
 │       │   └── state.py          #   AgentState TypedDict
 │       ├── database/
@@ -575,7 +575,7 @@ NLQuery_Agent/
 
 - [LangChain](https://www.langchain.com) / [LangGraph](https://www.langchain.com/langgraph) for
   the agent orchestration framework.
-- [Groq](https://groq.com) for the Qwen 3.6-27B analyst runtime.
+- [Groq](https://groq.com) for the `qwen/qwen3.8-27b` analyst runtime.
 - [Google AI](https://ai.google.dev) for Gemini 2.5 Flash.
 - [FastAPI](https://fastapi.tiangolo.com), [Express](https://expressjs.com), and
   [React](https://react.dev) — the foundation of the stack.
