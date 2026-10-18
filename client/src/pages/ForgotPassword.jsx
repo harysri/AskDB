@@ -638,6 +638,18 @@ const ForgotPassword = () => {
 
         {/* Top: Logo */}
         <div className="relative z-10">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            type="button"
+            onClick={() => navigate(-1)}
+            className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-on-surface-variant"
+          >
+            <span className="material-symbols-outlined text-base">
+              arrow_back
+            </span>
+            <span>Back</span>
+          </motion.button>
           <Link to="/" className="flex items-center gap-3 group">
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
               <span className="material-symbols-outlined text-background text-2xl font-bold">
