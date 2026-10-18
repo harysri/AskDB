@@ -1,11 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import {
-  getInitials,
-  getDisplayName,
-  getRoleLabel,
-} from "../utils/user";
+import { getInitials, getDisplayName, getRoleLabel } from "../utils/user";
 
 const Sidebar = ({
   onConnectClick,
@@ -60,7 +56,7 @@ const Sidebar = ({
   };
 
   return (
-    <aside className="fixed left-0 top-0 bottom-0 w-[280px] bg-surface-container-lowest flex flex-col z-40 hidden lg:flex border-r border-outline-variant/20 transition-all duration-200 ease-in-out">
+    <aside className="fixed left-0 top-0 bottom-0 w-[360px] bg-surface-container-lowest flex flex-col z-40 hidden lg:flex border-r border-outline-variant/20 transition-all duration-200 ease-in-out">
       {/* Logo Section */}
       <div className="px-4 pt-8 pb-6">
         <div
@@ -99,10 +95,10 @@ const Sidebar = ({
               </p>
               <p className="text-label-md text-on-surface-variant/70 leading-none truncate">
                 {currentConnection
-                  ? (currentConnection.db_type
-                      ? currentConnection.db_type.charAt(0).toUpperCase() +
-                        currentConnection.db_type.slice(1)
-                      : "PostgreSQL")
+                  ? currentConnection.db_type
+                    ? currentConnection.db_type.charAt(0).toUpperCase() +
+                      currentConnection.db_type.slice(1)
+                    : "PostgreSQL"
                   : "Click to connect"}
               </p>
             </div>
@@ -175,7 +171,7 @@ const Sidebar = ({
       <div className="px-4 mb-6">
         <button
           onClick={onNewSession}
-          className="w-full py-3 bg-primary text-background rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/10 hover:brightness-110 active:scale-95 transition-all"
+          className="w-full py-3 bg-primary text-background rounded-full font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/10 hover:brightness-110 active:scale-95 transition-all"
         >
           <span className="material-symbols-outlined">add</span>
           New Session
@@ -202,30 +198,19 @@ const Sidebar = ({
           </div>
         ) : (
           sessions.map((session) => (
-            <div
-              key={session.id}
-              className="group relative"
-            >
+            <div key={session.id} className="group relative">
               <a
                 onClick={() => onSessionClick?.(session.id)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all cursor-pointer ${
+                className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all cursor-pointer ${
                   activeSessionId === session.id
                     ? "text-primary font-bold bg-primary-container/20 border-l-2 border-primary"
                     : "text-on-surface-variant hover:bg-white/5"
                 }`}
               >
-                <span
-                  className={`material-symbols-outlined ${activeSessionId === session.id ? "" : "group-hover:text-primary transition-colors"}`}
-                  style={
-                    activeSessionId === session.id
-                      ? { fontVariationSettings: '"FILL" 1' }
-                      : {}
-                  }
-                >
-                  {session.icon || "chat_bubble"}
-                </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate">{session.title}</span>
+                  <span className="block truncate text-sm">
+                    {session.title}
+                  </span>
                   {getDbLabel(session.connection_id) && (
                     <span className="block truncate text-[10px] text-on-surface-variant/60">
                       {getDbLabel(session.connection_id)}
