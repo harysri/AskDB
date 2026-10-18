@@ -23,7 +23,7 @@
 
 </div>
 
-Ask your databases questions in plain English — AskDB translates them into safe, read-only SQL, executes them against your **PostgreSQL / MySQL** databases, and returns the query, the results, and a plain-language business insight with actionable recommendations.
+Ask your databases questions in plain English — AskDB translates them into safe, read-only SQL, executes them against your **PostgreSQL / MySQL** databases, and returns the query, the results as an interactive table with auto-detected bar/line/pie charts, and a plain-language business insight with actionable recommendations.
 
 ## Table of Contents
 
@@ -76,6 +76,13 @@ The platform is built as a three-tier monorepo:
   plain-language business insights.
 - **📦 Three-part chat response** — each turn returns up to three assistant messages:
   `sql` (the generated query), `table` (the results), and `insight` (analysis + recommendations).
+- **📊 Auto-detected result charts** — every results card carries a **Table / Chart** toggle.
+  AskDB analyzes the result columns entirely client-side (numeric-string tolerance, temporal
+  date detection, null handling) to recommend the right visualization — `line` for time series,
+  `pie` for a single measure across ≤ 12 categories, `bar` otherwise — rendered with **Recharts**
+  and styled to the Material 3 palette. Supports multi-series bars/lines with a legend, a measure
+  picker for pies, compact axis number formatting, and caps of 100 points / 6 series / 20 pie
+  slices with "first N of M" notes. The Recharts bundle is lazy-loaded only when a chart is opened.
 - **🛡️ Defense-in-depth read-only enforcement** — static SQL validation, automatic `LIMIT`,
   read-only sessions, statement timeouts, and a write-probe that refuses writable credentials.
 - **🗃️ Automatic schema awareness** — introspects your database and caches a compact schema in
@@ -114,7 +121,7 @@ The platform is built as a three-tier monorepo:
 | Application DB / cache | MongoDB (Mongoose 8 — gateway · Motor 3.5 / PyMongo 4.8 — core)       | —             |
 | Customer databases     | PostgreSQL (`psycopg2-binary`) · MySQL (`pymysql`) via SQLAlchemy     | 2.0.31        |
 | Encryption at rest     | Fernet (`cryptography`)                                               | 42.0.8        |
-| Frontend               | React 18 · React Router 6 · Vite 5 · Tailwind CSS 3.4 · framer-motion | —             |
+| Frontend               | React 18 · React Router 6 · Vite 5 · Tailwind CSS 3.4 · framer-motion · Recharts (charts, lazy-loaded) | —             |
 | Runtime / DevOps       | Docker · Docker Compose · nodemon · `uv`                              | —             |
 
 ---
@@ -356,7 +363,10 @@ Open `http://localhost:5173` — Vite proxies API calls to the gateway on `:8080
 3. **Start a chat session** and ask a business question in plain English.
 4. Review the response — up to three assistant messages in order:
    - 💾 **SQL** — the generated read-only query (with a short narration),
-   - 📊 **Table** — the query results,
+   - 📊 **Table** — the query results. When the columns are chartable, a **Table / Chart** toggle
+     appears: switch to **Chart** to see an auto-detected bar, line (temporal columns), or pie
+     (single measure, fewer categories) visualization of the same rows, with a chart-type
+     switcher and — for pies with multiple numeric columns — a measure dropdown,
    - 💡 **Insight** — a plain-language summary plus 2–4 actionable recommendations
      (only when rows are returned).
 5. Manage sessions (rename, archive, delete) and switch connected databases from the sidebar.
@@ -544,7 +554,8 @@ NLQuery_Agent/
         │   ├── connection.js
         │   └── sessions.js
         ├── components/
-        │   ├── ChatMessage.jsx   #   renders sql / table / insight message types
+        │   ├── ChatMessage.jsx   #   renders sql / table / insight message types (+ Table/Chart toggle)
+        │   ├── ResultChart.jsx   #   Recharts bar/line/pie view of result rows (lazy-loaded)
         │   ├── ConnectModal.jsx  #   connect-database modal
         │   ├── ProtectedRoute.jsx
         │   └── Sidebar.jsx
@@ -556,6 +567,7 @@ NLQuery_Agent/
         │   ├── Login.jsx
         │   └── Signup.jsx
         └── utils/
+            ├── chartData.js      #   column profiling (numeric/temporal), chart data transform
             ├── messages.js
             └── user.js
 ```
