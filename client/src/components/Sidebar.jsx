@@ -60,17 +60,17 @@ const Sidebar = ({
   return (
     <aside className="fixed left-0 top-0 bottom-0 w-[360px] bg-surface-container-lowest flex flex-col z-40 hidden lg:flex border-r border-outline-variant/20 transition-all duration-200 ease-in-out">
       {/* Logo Section */}
-      <div className="px-4 pt-8 pb-6">
+      <div className="px-4 pt-8 pb-6 flex flex-col items-center text-center">
         <div
-          className="flex items-center gap-2 cursor-pointer"
+          className="flex items-center justify-center gap-2 cursor-pointer"
           onClick={() => navigate("/")}
         >
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <span className="material-symbols-outlined text-background text-xl font-bold">
+          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+            <span className="material-symbols-outlined text-background text-2xl font-bold">
               database
             </span>
           </div>
-          <span className="font-headline-md text-xl font-bold tracking-tighter text-on-surface">
+          <span className="font-headline-md text-2xl font-bold tracking-tighter text-on-surface">
             AskDB
           </span>
         </div>
@@ -123,14 +123,14 @@ const Sidebar = ({
                   setConnMenuOpen(false);
                   onConnectClick?.();
                 }}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-label-md text-primary hover:bg-white/5 transition-colors"
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-lg text-primary hover:bg-white/5 transition-colors"
               >
-                <span className="material-symbols-outlined text-sm">add</span>
+                <span className="material-symbols-outlined text-lg">add</span>
                 Connect new database…
               </button>
               <div className="mx-4 my-1 h-px bg-white/10"></div>
               {connections.length === 0 ? (
-                <p className="px-4 py-3 text-label-md text-on-surface-variant/50">
+                <p className="px-4 py-3 text-lg text-on-surface-variant/50">
                   No saved connections yet
                 </p>
               ) : (
@@ -148,13 +148,13 @@ const Sidebar = ({
                         : "text-on-surface-variant"
                     }`}
                   >
-                    <span className="material-symbols-outlined text-sm">
+                    <span className="material-symbols-outlined text-lg">
                       {conn.connection_id === activeConnectionId
                         ? "check_circle"
                         : "database"}
                     </span>
                     <span className="min-w-0 text-left">
-                      <span className="block text-label-md truncate">
+                      <span className="block text-lg truncate">
                         {conn.database}
                       </span>
                       <span className="block text-[10px] text-on-surface-variant/60 truncate">
@@ -303,9 +303,9 @@ const Sidebar = ({
                     setProfileMenuOpen(false);
                     onProfileClick?.();
                   }}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-label-md text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors"
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-lg text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors"
                 >
-                  <span className="material-symbols-outlined text-sm">
+                  <span className="material-symbols-outlined text-lg">
                     person
                   </span>
                   Profile
@@ -314,9 +314,9 @@ const Sidebar = ({
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-label-md text-error hover:bg-error/10 transition-colors"
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-lg text-error hover:bg-error/10 transition-colors"
                 >
-                  <span className="material-symbols-outlined text-sm">
+                  <span className="material-symbols-outlined text-lg">
                     logout
                   </span>
                   Log out
