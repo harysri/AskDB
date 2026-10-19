@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import ConnectModal from "../components/ConnectModal";
+import ProfileModal from "../components/ProfileModal";
 import ChatMessage from "../components/ChatMessage";
 import {
   listSessions,
@@ -12,7 +13,7 @@ import {
 import { listConnections } from "../api/connection";
 import { sendMessage } from "../api/chat";
 import { useAuth } from "../context/AuthContext";
-import { getFirstName } from "../utils/user";
+import { getFirstName, getInitials } from "../utils/user";
 import { mapMessage, mapSession } from "../utils/messages";
 import useSpeechRecognition from "../hooks/useSpeechRecognition";
 
@@ -50,6 +51,7 @@ const Chat = () => {
     }
   });
   const [showConnectModal, setShowConnectModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -306,6 +308,7 @@ const Chat = () => {
         activeSessionId={activeSessionId}
         onSessionClick={handleSessionClick}
         onDeleteSession={handleDeleteSession}
+        onProfileClick={() => setShowProfileModal(true)}
       />
 
       {/* Mobile Header */}
@@ -320,14 +323,25 @@ const Chat = () => {
             AskDB
           </span>
         </div>
-        <button
-          onClick={() => setShowConnectModal(true)}
-          className="p-2 rounded-lg bg-surface-container-high/50 border border-white/5"
-        >
-          <span className="material-symbols-outlined text-primary">
-            settings_ethernet
-          </span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowProfileModal(true)}
+            aria-label="Open profile"
+            title="Profile"
+            className="w-9 h-9 rounded-full bg-primary-container/30 border border-primary/30 flex items-center justify-center text-primary text-xs font-bold active:scale-95 transition-transform"
+          >
+            {getInitials(user)}
+          </button>
+          <button
+            onClick={() => setShowConnectModal(true)}
+            className="p-2 rounded-lg bg-surface-container-high/50 border border-white/5"
+          >
+            <span className="material-symbols-outlined text-primary">
+              settings_ethernet
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Main Content Area */}
@@ -557,6 +571,12 @@ const Chat = () => {
         isOpen={showConnectModal}
         onClose={() => setShowConnectModal(false)}
         onConnect={handleConnect}
+      />
+
+      {/* Profile Modal */}
+      <ProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
       />
     </div>
   );

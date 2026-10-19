@@ -15,6 +15,7 @@ const Sidebar = ({
   activeSessionId,
   onSessionClick,
   onDeleteSession,
+  onProfileClick,
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,6 +23,7 @@ const Sidebar = ({
   const isChatPage = location.pathname === "/chat";
   const [menuOpenFor, setMenuOpenFor] = useState(null);
   const [connMenuOpen, setConnMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
@@ -266,25 +268,62 @@ const Sidebar = ({
 
       {/* Footer / Profile */}
       <div className="p-4 bg-surface-container-lowest border-t border-white/5">
-        <div className="flex items-center gap-3 p-2 rounded-2xl hover:bg-white/5 transition-colors cursor-pointer">
-          <div className="w-10 h-10 rounded-full bg-primary-container/30 border border-primary/30 flex items-center justify-center text-primary font-bold">
-            {getInitials(user)}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-body-md font-bold text-on-surface truncate">
-              {getDisplayName(user)}
-            </p>
-            <p className="text-label-md text-on-surface-variant truncate">
-              {getRoleLabel(user?.role)} • {user?.email}
-            </p>
-          </div>
+        <div className="relative">
           <button
-            onClick={handleLogout}
-            title="Log out"
-            className="text-outline hover:text-error transition-colors"
+            type="button"
+            onClick={() => setProfileMenuOpen((prev) => !prev)}
+            className="w-full flex items-center gap-3 p-2 rounded-2xl hover:bg-white/5 transition-colors group"
           >
-            <span className="material-symbols-outlined">logout</span>
+            <div className="w-10 h-10 rounded-full bg-primary-container/30 border border-primary/30 flex items-center justify-center text-primary font-bold shrink-0">
+              {getInitials(user)}
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-body-md font-bold text-on-surface truncate">
+                {getDisplayName(user)}
+              </p>
+              <p className="text-label-md text-on-surface-variant truncate">
+                {getRoleLabel(user?.role)} • {user?.email}
+              </p>
+            </div>
+            <span className="material-symbols-outlined text-outline group-hover:text-primary transition-colors shrink-0">
+              {profileMenuOpen ? "expand_less" : "expand_more"}
+            </span>
           </button>
+
+          {profileMenuOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-30"
+                onClick={() => setProfileMenuOpen(false)}
+              />
+              <div className="absolute bottom-full left-4 right-4 mb-2 z-40 py-1.5 rounded-xl bg-surface-container-high border border-white/10 shadow-2xl animate-fade-in">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileMenuOpen(false);
+                    onProfileClick?.();
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-label-md text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">
+                    person
+                  </span>
+                  Profile
+                </button>
+                <div className="mx-4 my-1 h-px bg-white/10"></div>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-label-md text-error hover:bg-error/10 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">
+                    logout
+                  </span>
+                  Log out
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
