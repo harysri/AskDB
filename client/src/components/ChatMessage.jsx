@@ -1,5 +1,6 @@
 import React, { Suspense, lazy, useMemo, useState } from "react";
 import { analyzeTable } from "../utils/chartData";
+import ResultTable from "./ResultTable";
 
 const ResultChart = lazy(() => import("./ResultChart"));
 
@@ -160,41 +161,7 @@ const ChatMessage = ({ message }) => {
               )}
 
               {tableView === "table" || !chartAnalysis?.chartable ? (
-                <div className="mt-3 rounded-xl overflow-hidden border border-outline-variant/30">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead className="bg-surface-container-lowest border-b border-outline-variant/30">
-                        <tr>
-                          {message.headers?.map((header, i) => (
-                            <th
-                              key={i}
-                              className="px-4 py-3 text-label-mono text-primary uppercase text-[10px] tracking-wider"
-                            >
-                              {header}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-outline-variant/20">
-                        {message.rows?.map((row, i) => (
-                          <tr
-                            key={i}
-                            className="hover:bg-white/5 transition-colors"
-                          >
-                            {row.map((cell, j) => (
-                              <td
-                                key={j}
-                                className="px-4 py-3 text-sm md:text-base text-on-surface-variant"
-                              >
-                                {cell}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                <ResultTable headers={message.headers} rows={message.rows} />
               ) : (
                 <Suspense
                   fallback={

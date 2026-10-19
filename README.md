@@ -83,6 +83,13 @@ The platform is built as a three-tier monorepo:
   and styled to the Material 3 palette. Supports multi-series bars/lines with a legend, a measure
   picker for pies, compact axis number formatting, and caps of 100 points / 6 series / 20 pie
   slices with "first N of M" notes. The Recharts bundle is lazy-loaded only when a chart is opened.
+- **🧾 Result utility toolbar** — every results card supports one-click **Copy** of the full
+  result set as TSV (spreadsheet-ready, headers included, tab/newline inside cells flattened),
+  client-side **pagination** at 50 rows per page (`Showing X–Y of N` with prev/next, shown only
+  for large results), and **Open in new tab**, which renders every returned row in a standalone,
+  dark-themed HTML table with a sticky header (HTML-escaped, popup-blocked aware).
+  opening a read-only modal with the initials avatar, name, email, role, and member-since date;
+  a tappable avatar in the mobile header opens the same modal.
 - **🛡️ Defense-in-depth read-only enforcement** — static SQL validation, automatic `LIMIT`,
   read-only sessions, statement timeouts, and a write-probe that refuses writable credentials.
 - **🗃️ Automatic schema awareness** — introspects your database and caches a compact schema in
@@ -107,22 +114,22 @@ The platform is built as a three-tier monorepo:
 
 ## Tech Stack
 
-| Layer                  | Technology                                                            | Version       |
-| ---------------------- | --------------------------------------------------------------------- | ------------- |
-| API Gateway            | Express.js (Node.js ≥ 18)                                             | 4.19          |
-| Gateway middleware     | helmet · cors · morgan · cookie-parser · winston                      | —             |
-| Auth & validation      | jsonwebtoken · bcryptjs · express-validator                           | 9 / 2.4 / 7.1 |
-| Email delivery         | nodemailer (Gmail SMTP)                                               | 6.9           |
-| Rate limiting          | express-rate-limit + rate-limit-mongo                                 | 7.3 / 2.3     |
-| Core service           | FastAPI (Python 3.11) + uvicorn                                       | 0.111 / 0.30  |
-| Agent orchestration    | LangGraph                                                             | 0.1.16        |
-| Analyst LLM            | Groq · `qwen/qwen3.8-27b` (via `langchain-groq`)                      | 0.1.9         |
-| Insight LLM            | Google Gemini 2.5 Flash (via `langchain-google-genai`)                | 1.0.8         |
-| Application DB / cache | MongoDB (Mongoose 8 — gateway · Motor 3.5 / PyMongo 4.8 — core)       | —             |
-| Customer databases     | PostgreSQL (`psycopg2-binary`) · MySQL (`pymysql`) via SQLAlchemy     | 2.0.31        |
-| Encryption at rest     | Fernet (`cryptography`)                                               | 42.0.8        |
+| Layer                  | Technology                                                                                             | Version       |
+| ---------------------- | ------------------------------------------------------------------------------------------------------ | ------------- |
+| API Gateway            | Express.js (Node.js ≥ 18)                                                                              | 4.19          |
+| Gateway middleware     | helmet · cors · morgan · cookie-parser · winston                                                       | —             |
+| Auth & validation      | jsonwebtoken · bcryptjs · express-validator                                                            | 9 / 2.4 / 7.1 |
+| Email delivery         | nodemailer (Gmail SMTP)                                                                                | 6.9           |
+| Rate limiting          | express-rate-limit + rate-limit-mongo                                                                  | 7.3 / 2.3     |
+| Core service           | FastAPI (Python 3.11) + uvicorn                                                                        | 0.111 / 0.30  |
+| Agent orchestration    | LangGraph                                                                                              | 0.1.16        |
+| Analyst LLM            | Groq · `qwen/qwen3.8-27b` (via `langchain-groq`)                                                       | 0.1.9         |
+| Insight LLM            | Google Gemini 2.5 Flash (via `langchain-google-genai`)                                                 | 1.0.8         |
+| Application DB / cache | MongoDB (Mongoose 8 — gateway · Motor 3.5 / PyMongo 4.8 — core)                                        | —             |
+| Customer databases     | PostgreSQL (`psycopg2-binary`) · MySQL (`pymysql`) via SQLAlchemy                                      | 2.0.31        |
+| Encryption at rest     | Fernet (`cryptography`)                                                                                | 42.0.8        |
 | Frontend               | React 18 · React Router 6 · Vite 5 · Tailwind CSS 3.4 · framer-motion · Recharts (charts, lazy-loaded) | —             |
-| Runtime / DevOps       | Docker · Docker Compose · nodemon · `uv`                              | —             |
+| Runtime / DevOps       | Docker · Docker Compose · nodemon · `uv`                                                               | —             |
 
 ---
 
@@ -366,7 +373,9 @@ Open `http://localhost:5173` — Vite proxies API calls to the gateway on `:8080
    - 📊 **Table** — the query results. When the columns are chartable, a **Table / Chart** toggle
      appears: switch to **Chart** to see an auto-detected bar, line (temporal columns), or pie
      (single measure, fewer categories) visualization of the same rows, with a chart-type
-     switcher and — for pies with multiple numeric columns — a measure dropdown,
+     switcher and — for pies with multiple numeric columns — a measure dropdown. The table's
+     toolbar also lets you **Copy** all rows as TSV, page through large results
+     (50 rows per page), and **open the full table in a new browser tab**,
    - 💡 **Insight** — a plain-language summary plus 2–4 actionable recommendations
      (only when rows are returned).
 5. Manage sessions (rename, archive, delete) and switch connected databases from the sidebar.
@@ -555,7 +564,9 @@ NLQuery_Agent/
         │   └── sessions.js
         ├── components/
         │   ├── ChatMessage.jsx   #   renders sql / table / insight message types (+ Table/Chart toggle)
+        │   ├── ResultTable.jsx   #   results toolbar: Copy TSV · pagination · open in new tab
         │   ├── ResultChart.jsx   #   Recharts bar/line/pie view of result rows (lazy-loaded)
+        │   ├── ProfileModal.jsx  #   read-only user profile + avatar modal
         │   ├── ConnectModal.jsx  #   connect-database modal
         │   ├── ProtectedRoute.jsx
         │   └── Sidebar.jsx
@@ -568,6 +579,7 @@ NLQuery_Agent/
         │   └── Signup.jsx
         └── utils/
             ├── chartData.js      #   column profiling (numeric/temporal), chart data transform
+            ├── tableUtils.js     #   TSV serialization + standalone new-tab HTML table
             ├── messages.js
             └── user.js
 ```
